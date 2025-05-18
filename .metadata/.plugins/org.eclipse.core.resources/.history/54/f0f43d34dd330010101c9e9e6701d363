@@ -1,0 +1,92 @@
+<%@ page contentType="text/html; charset=UTF-8"%>
+<%@ page import="model.User"%>
+<%@ page import="model.Post"%>
+<%@ page import="java.util.List"%>
+<%@ page import="java.time.format.DateTimeFormatter"%>
+
+<%
+User loginUser = (User) session.getAttribute("loginUser");
+User profileUser = (User) request.getAttribute("profileUser");
+List<Post> userPosts = (List<Post>) request.getAttribute("userPosts");
+DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+if (profileUser == null) {
+	response.sendRedirect("timeline");
+	return;
+}
+%>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>プロフィール</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<div class="container">
+		<h1 class="welcome"><%=profileUser.getName()%>さんのプロフィール
+		</h1>
+
+		<p>
+			<strong>自己紹介:</strong>
+			<%=profileUser.getBio() != null && !profileUser.getBio().isEmpty()
+		? profileUser.getBio()
+		: "まだ自己紹介がありません"%>
+		</p>
+
+		<%-- 自分のプロフィールだけ編集リンクを表示 --%>
+		<%
+		if (loginUser != null && loginUser.getId() == profileUser.getId()) {
+		%>
+		<p>
+			<a href="profile_edit.jsp" class="btn">自己紹介を編集</a>
+		</p>
+		<%
+		}
+		%>
+
+		<hr>
+		<h2>投稿一覧</h2>
+		<p>
+			<a href="timeline" class="logout-link">タイムラインへ戻る</a>
+		</p>
+
+		<div class="post-list">
+			<%
+			if (userPosts != null && !userPosts.isEmpty()) {
+				for (Post post : userPosts) {
+			%>
+			<div class="post-item">
+				<p class="post-user">
+					<a href="profile?user_id=<%=post.getUserId()%>"
+						class="post-user-link"><%=post.getUserName()%></a>
+				</p>
+				<p class="post-content"><%=post.getContent()%></p>
+				<p class="post-date">
+					投稿日:
+					<%=dtf.format(post.getCreatedAt())%></p>
+				<p class="post-likes">
+					いいね
+					<%=post.getLikeCount()%>
+					<%
+					if (post.isLikedByCurrentUser()) {
+					%>
+					<span class="liked-star">★いいね済み</span>
+					<%
+					}
+					%>
+				</p>
+			</div>
+			<%
+			}
+			} else {
+			%>
+			<p>まだ投稿がありません。</p>
+			<%
+			}
+			%>
+		</div>
+	</div>
+</body>
+</html>

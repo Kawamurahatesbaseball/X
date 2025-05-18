@@ -1,0 +1,80 @@
+<%@ page contentType="text/html; charset=UTF-8"%>
+<%@ page import="model.User"%>
+<%@ page import="model.Post"%>
+<%@ page import="java.util.List"%>
+<%@ page import="java.time.format.DateTimeFormatter"%>
+
+<%
+User profileUser = (User) request.getAttribute("profileUser");
+List<Post> userPosts = (List<Post>) request.getAttribute("userPosts");
+DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+%>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>プロフィール</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<div class="container">
+	<h1 class="welcome"><%=(profileUser != null) ? profileUser.getName() : "ユーザー"%>さんのプロフィール
+	</h1>
+	<p>
+		自己紹介:
+		<%=user.getBio() != null ? user.getBio() : "まだ自己紹介がありません"%></p>
+
+	<form action="profile_edit" method="post">
+		<label>自己紹介：</label><br>
+		<textarea name="bio" rows="5" maxlength="500"><%=user.getBio() != null ? user.getBio() : ""%></textarea>
+		<br>
+		<button type="submit">更新</button>
+	</form>
+
+
+	<hr>
+
+	<h2>投稿一覧</h2>
+
+	<p>
+		<a href="timeline" class="logout-link">タイムラインへ戻る</a>
+	</p>
+
+	<div class="post-list">
+		<c:choose>
+			<c:when test="${not empty userPosts}">
+				<%
+				for (Post post : userPosts) {
+				%>
+				<div class="post-item">
+					<p class="post-user">
+						<a href="profile?user_id=<%=post.getUserId()%>"
+							class="post-user-link"><%=post.getUserName()%></a>
+					</p>
+					<p class="post-content"><%=post.getContent()%></p>
+					<p class="post-date">
+						投稿日:
+						<%=dtf.format(post.getCreatedAt())%></p>
+					<p class="post-likes">
+						いいね
+						<%=post.getLikeCount()%>
+						<%
+						if (post.isLikedByCurrentUser()) {
+						%>
+						<span class="liked-star">★いいね済み</span>
+						<%
+						}
+						%>
+					</p>
+				</div>
+				<%
+				}
+				%>
+			</c:when>
+			<c:otherwise>
+				<p></p>
+			</c:otherwise>
+		</c:choose>
+	</div>
+</div>

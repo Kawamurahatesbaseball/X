@@ -5,6 +5,7 @@ public class User {
 	private String name;
 	private String passwordHash;
 	private String iconUrl;
+	private String bio;
 
 	// 新規登録時のコンストラクタ（IDなし）
 	public User(String name, String passwordHash) {
@@ -13,10 +14,11 @@ public class User {
 	}
 
 	// データベース取得時のコンストラクタ（IDあり）
-	public User(int id, String name, String passwordHash) {
+	public User(int id, String name, String passwordHash, String bio) {
 		this.id = id;
 		this.name = name;
 		this.passwordHash = passwordHash;
+		this.bio = bio;
 	}
 
 	// ゲッター
@@ -38,5 +40,13 @@ public class User {
 
 	public void setIconUrl(String iconUrl) {
 		this.iconUrl = iconUrl;
+	}
+
+	public String getBio() {
+		return bio;
+	}
+
+	public void setBio(String bio) {
+		this.bio = bio;
 	}
 }

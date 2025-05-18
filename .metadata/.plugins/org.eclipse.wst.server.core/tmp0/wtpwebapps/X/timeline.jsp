@@ -20,14 +20,14 @@ DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ホーム - タイムライン</title>
+<title>ホーム</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 	<div class="container">
 
 		<h1 class="welcome">
-			<a href="profile?user_id=<%=loginUser.getId()%>"><%=loginUser.getName()%></a>
+			<a href="profile?user_id=<%=loginUser.getId()%>"><%=loginUser.getName()%>のタイムライン</a>
 		</h1>
 
 		<form action="post" method="post" class="post-form">

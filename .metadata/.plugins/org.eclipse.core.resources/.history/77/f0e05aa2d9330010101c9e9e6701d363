@@ -1,0 +1,83 @@
+package dao;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import model.User;
+
+public class UserDAO {
+	// データベース接続情報（適宜修正してください）
+	private static final String URL = "jdbc:mysql://localhost:3306/X_db?useSSL=false&serverTimezone=UTC";
+	private static final String DB_USER = "test";
+	private static final String DB_PASSWORD = "dyfkmochi941523";
+
+	// ユーザーを登録するメソッド
+	public static boolean insert(User user) {
+		String sql = "INSERT INTO users (name, password_hash) VALUES (?, ?)";
+
+		try (
+				Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setString(1, user.getName());
+			stmt.setString(2, user.getPasswordHash());
+
+			int rows = stmt.executeUpdate();
+			return rows == 1;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	// ユーザー名からユーザー情報を取得するメソッド（ログイン用）
+	public static User findByName(String name) {
+		String sql = "SELECT * FROM users WHERE name = ?";
+
+		try (
+				Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setString(1, name);
+			ResultSet rs = stmt.executeQuery();
+
+			if (rs.next()) {
+				int id = rs.getInt("id");
+				String passwordHash = rs.getString("password_hash");
+				String bio = rs.getString("bio"); // 追加
+
+				return new User(id, name, passwordHash, bio); // bioを渡すコンストラクタを使う
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// ユーザーIDからユーザーを取得するメソッド（自動ログインなどで使用）
+	public static User findById(int id) {
+		String sql = "SELECT * FROM users WHERE id = ?";
+
+		try (
+				Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setInt(1, id);
+			ResultSet rs = stmt.executeQuery();
+
+			if (rs.next()) {
+				String name = rs.getString("name");
+				String passwordHash = rs.getString("password_hash");
+				return new User(id, name, passwordHash);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+}

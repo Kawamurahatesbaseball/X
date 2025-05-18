@@ -1,0 +1,43 @@
+package servlet;
+
+import dao.UserDAO;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import model.User;
+import java.io.IOException;
+
+@WebServlet("/profile_edit")
+public class ProfileEditServlet extends HttpServlet {
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+
+		request.setCharacterEncoding("UTF-8");
+		HttpSession session = request.getSession(false);
+		User loginUser = (User) session.getAttribute("loginUser");
+
+		if (loginUser == null) {
+			response.sendRedirect("login.jsp");
+			return;
+		}
+
+		String bio = request.getParameter("bio");
+
+		// DAOで更新処理を行う（後述）
+		boolean success = UserDAO.updateBio(loginUser.getId(), bio);
+
+		if (success) {
+			// セッションのUserオブジェクトのbioも更新
+			loginUser.setBio(bio);
+			session.setAttribute("loginUser", loginUser);
+
+			response.sendRedirect("profile?user_id=" + loginUser.getId());
+		} else {
+			request.setAttribute("error", "プロフィール更新に失敗しました");
+			request.getRequestDispatcher("profile_edit.jsp").forward(request, response);
+		}
+	}
+}
