@@ -1,0 +1,67 @@
+<%@ page contentType="text/html; charset=UTF-8"%>
+<%@ page import="model.User"%>
+<%@ page import="model.Post"%>
+<%@ page import="java.util.List"%>
+<%@ page import="java.time.format.DateTimeFormatter"%>
+
+<%
+User loginUser = (User) session.getAttribute("loginUser");
+List<Post> posts = (List<Post>) request.getAttribute("userPosts");
+
+if (loginUser == null) {
+	response.sendRedirect("login.jsp");
+	return;
+}
+
+DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+%>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>プロフィール - 投稿一覧</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+	<div class="container">
+
+		<h1 class="welcome">
+			<%=loginUser.getName()%>さんのプロフィール
+		</h1>
+
+		<p>
+			<a href="timeline.jsp">← タイムラインに戻る</a> | <a href="logout"
+				class="logout-link">ログアウト</a>
+		</p>
+
+		<h2>あなたの投稿一覧</h2>
+
+		<div class="post-list">
+			<%
+			if (posts != null && !posts.isEmpty()) {
+				for (Post post : posts) {
+			%>
+			<div class="post-item">
+				<p class="post-content"><%=post.getContent()%></p>
+				<p class="post-date"><%=post.getCreatedAt().format(formatter)%></p>
+
+				<form action="delete" method="post" class="delete-form"
+					onsubmit="return confirm('この投稿を削除しますか？');">
+					<input type="hidden" name="post_id" value="<%=post.getId()%>">
+					<button type="submit" class="delete-button">削除</button>
+				</form>
+			</div>
+			<%
+			}
+			} else {
+			%>
+			<p>投稿がありません。</p>
+			<%
+			}
+			%>
+		</div>
+
+	</div>
+</body>
+</html>

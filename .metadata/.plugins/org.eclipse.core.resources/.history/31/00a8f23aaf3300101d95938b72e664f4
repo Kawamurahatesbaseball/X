@@ -1,0 +1,52 @@
+package servlet;
+
+import dao.UserDAO;
+import model.User;
+import util.HashUtil;
+import util.EscapeUtil;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
+import java.io.IOException;
+
+@WebServlet("/login")
+public class LoginServlet extends HttpServlet {
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        request.setCharacterEncoding("UTF-8");
+        response.setContentType("text/html; charset=UTF-8");
+
+        String name = request.getParameter("name");
+        String password = request.getParameter("password");
+
+        // 入力されたユーザー名をエスケープ（安全のため）
+        String escapedName = EscapeUtil.escapeHtml(name);
+
+        // データベースから該当ユーザーを取得
+        User user = UserDAO.findByName(escapedName);
+
+        if (user != null) {
+            // 入力パスワードをハッシュ化して照合
+            String hashed = HashUtil.hashPassword(password);
+            if (user.getPasswordHash().equals(hashed)) {
+                // 認証成功 → セッションにユーザー情報を保存
+                HttpSession session = request.getSession();
+                session.setAttribute("loginUser", user);
+
+                // ホーム画面へ遷移（まだ作っていなければ仮に welcome.jsp など）
+                response.sendRedirect("home.jsp");
+                return;
+            }
+        }
+
+        // 認証失敗
+        response.getWriter().println("ログインに失敗しました。<a href='login.jsp'>戻る</a>");
+    }
+}

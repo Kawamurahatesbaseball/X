@@ -1,0 +1,53 @@
+package model;
+
+import java.time.LocalDateTime;
+
+public class Post {
+	private int id;
+	private int userId;
+	private String userName;
+	private String content;
+	private LocalDateTime createdAt;
+	private int likeCount;
+	private boolean likedByCurrentUser;
+
+	// コンストラクタ（投稿一覧用）
+	public Post(int id, int userId, String userName, String content, LocalDateTime createdAt) {
+		this.id = id;
+		this.userId = userId;
+		this.userName = userName;
+		this.content = content;
+		this.createdAt = createdAt;
+		this.likeCount = likeCount;
+		this.likedByCurrentUser = likedByCurrentUser;
+	}
+
+	// ゲッター
+	public int getId() {
+		return id;
+	}
+
+	public int getUserId() {
+		return userId;
+	}
+
+	public String getUserName() {
+		return userName;
+	}
+
+	public String getContent() {
+		return content;
+	}
+
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public int getLikeCount() {
+		return likeCount;
+	}
+
+	public boolean isLikedByCurrentUser() {
+		return likedByCurrentUser;
+	}
+}

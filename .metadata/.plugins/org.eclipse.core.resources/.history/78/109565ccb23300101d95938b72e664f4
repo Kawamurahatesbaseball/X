@@ -1,0 +1,42 @@
+package filter;
+
+import dao.AuthTokenDAO;
+import dao.UserDAO;
+import model.User;
+
+import jakarta.servlet.*;
+import jakarta.servlet.annotation.WebFilter;
+import jakarta.servlet.http.*;
+
+import java.io.IOException;
+
+@WebFilter("/*")
+public class AutoLoginFilter implements Filter {
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+			throws IOException, ServletException {
+
+		HttpServletRequest req = (HttpServletRequest) request;
+		HttpServletResponse res = (HttpServletResponse) response;
+		HttpSession session = req.getSession(false);
+
+		if (session == null || session.getAttribute("loginUser") == null) {
+			Cookie[] cookies = req.getCookies();
+			if (cookies != null) {
+				for (Cookie cookie : cookies) {
+					if ("auth_token".equals(cookie.getName())) {
+						String token = cookie.getValue();
+						Integer userId = AuthTokenDAO.findUserIdByToken(token);
+						if (userId != null) {
+							User user = UserDAO.findById(userId);
+							if (user != null) {
+								req.getSession(true).setAttribute("loginUser", user);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		chain.doFilter(request, response);
+	}
+}

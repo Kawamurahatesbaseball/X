@@ -1,0 +1,33 @@
+package servlet;
+
+import java.io.IOException;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
+@WebServlet("/logout")
+public class LogoutServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        // セッションの削除
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+
+        // 自動ログイン用クッキーの削除
+        Cookie cookie = new Cookie("auth_token", "");
+        cookie.setMaxAge(0); // 有効期限を0にして削除
+        cookie.setPath("/");
+        response.addCookie(cookie);
+
+        // ログイン画面へリダイレクト
+        response.sendRedirect("login.jsp");
+    }
+}

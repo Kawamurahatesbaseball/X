@@ -1,0 +1,59 @@
+<%@ page contentType="text/html; charset=UTF-8"%>
+<%@ page import="model.User" %>
+<%@ page import="model.Post" %>
+<%@ page import="java.util.List" %>
+<%
+    User loginUser = (User) session.getAttribute("loginUser");
+    List<Post> posts = (List<Post>) request.getAttribute("posts");
+
+    if (loginUser == null) {
+        response.sendRedirect("login.jsp");
+        return;
+    }
+%>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ホーム - タイムライン</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+
+        <h1>ようこそ、<%= loginUser.getName() %>さん</h1>
+
+        <form action="post" method="post" class="post-form">
+            <textarea name="content" rows="3" maxlength="280" required placeholder="今どうしてる？"></textarea>
+            <button type="submit">投稿</button>
+        </form>
+
+        <p><a href="logout">ログアウト</a></p>
+
+        <div class="post-list">
+        <%
+            if (posts != null) {
+                for (Post post : posts) {
+        %>
+            <div class="post-item">
+                <p class="post-user"><strong><%= post.getUserName() %></strong></p>
+                <p class="post-content"><%= post.getContent() %></p>
+                <p class="post-date"><%= post.getCreatedAt() %></p>
+
+                <% if (post.getUserId() == loginUser.getId()) { %>
+                    <form action="delete" method="post" onsubmit="return confirm('この投稿を削除しますか？');">
+                        <input type="hidden" name="post_id" value="<%= post.getId() %>">
+                        <button type="submit">削除</button>
+                    </form>
+                <% } %>
+            </div>
+        <%
+                }
+            }
+        %>
+        </div>
+
+    </div>
+</body>
+</html>

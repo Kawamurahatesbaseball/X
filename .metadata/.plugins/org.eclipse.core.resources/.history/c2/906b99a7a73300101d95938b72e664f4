@@ -1,0 +1,28 @@
+package dao;
+
+import model.User;
+import java.sql.*;
+
+public class UserDAO {
+    // DB接続情報
+    private static final String URL = "jdbc:mysql://localhost:3306/X_db";
+    private static final String USER = "root";
+    private static final String PASSWORD = "your_mysql_password";  // ←自分のMySQLパスワードに変更
+
+    public static boolean insert(User user) {
+        String sql = "INSERT INTO users (name, password_hash) VALUES (?, ?)";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             
+            stmt.setString(1, user.getName());
+            stmt.setString(2, user.getPasswordHash());
+
+            int rows = stmt.executeUpdate();
+            return rows == 1;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+}

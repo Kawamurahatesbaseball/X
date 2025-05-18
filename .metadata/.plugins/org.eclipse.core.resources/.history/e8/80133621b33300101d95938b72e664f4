@@ -1,0 +1,71 @@
+package servlet;
+
+import java.io.IOException;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+
+import dao.AuthTokenDAO;
+import dao.UserDAO;
+import model.User;
+import util.HashUtil;
+import util.EscapeUtil;
+import util.TokenUtil;
+
+@WebServlet("/login")
+public class LoginServlet extends HttpServlet {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        // 入力値の取得・エスケープ
+        request.setCharacterEncoding("UTF-8");
+        String name = EscapeUtil.escape(request.getParameter("name"));
+        String password = request.getParameter("password");
+
+        // 入力チェック
+        if (name == null || name.isEmpty() || password == null || password.isEmpty()) {
+            request.setAttribute("error", "ユーザー名とパスワードを入力してください。");
+            request.getRequestDispatcher("login.jsp").forward(request, response);
+            return;
+        }
+
+        // ユーザー情報の取得
+        User user = UserDAO.findByName(name);
+        if (user == null) {
+            request.setAttribute("error", "ユーザーが存在しません。");
+            request.getRequestDispatcher("login.jsp").forward(request, response);
+            return;
+        }
+
+        // パスワード照合
+        String hashed = HashUtil.hashPassword(password);
+        if (!hashed.equals(user.getPasswordHash())) {
+            request.setAttribute("error", "パスワードが正しくありません。");
+            request.getRequestDispatcher("login.jsp").forward(request, response);
+            return;
+        }
+
+        // ログイン成功 → セッションに保存
+        HttpSession session = request.getSession();
+        session.setAttribute("loginUser", user);
+
+        // 自動ログイン対応（クッキーとトークン）
+        String token = TokenUtil.generateToken();
+        AuthTokenDAO.saveToken(user.getId(), token);
+
+        Cookie cookie = new Cookie("auth_token", token);
+        cookie.setMaxAge(7 * 24 * 60 * 60); // 7日間
+        cookie.setPath("/");
+        response.addCookie(cookie);
+
+        // ホームにリダイレクト
+        response.sendRedirect("home.jsp");
+    }
+
+    // GET でアクセスした場合はログイン画面へリダイレクト
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.sendRedirect("login.jsp");
+    }
+}

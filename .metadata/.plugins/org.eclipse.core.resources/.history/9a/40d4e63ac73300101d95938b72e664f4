@@ -1,0 +1,44 @@
+<%@ page contentType="text/html; charset=UTF-8"%>
+<%@ page import="java.util.List"%>
+<%@ page import="model.Post"%>
+<%@ page import="model.User"%>
+<%@ page import="java.time.format.DateTimeFormatter"%>
+<%
+User loginUser = (User) session.getAttribute("loginUser");
+List<Post> userPosts = (List<Post>) request.getAttribute("userPosts");
+DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>プロフィール</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<div class="container">
+		<h1><%=loginUser.getName()%>
+			のプロフィール
+		</h1>
+		<p>
+			投稿数：<%=userPosts.size()%></p>
+		<p>
+			<a href="timeline">← タイムラインへ戻る</a>
+		</p>
+
+		<div class="post-list">
+			<%
+			for (Post post : userPosts) {
+			%>
+			<div class="post-item">
+				<p class="post-content"><%=post.getContent()%></p>
+				<p class="post-date"><%=post.getCreatedAt().format(formatter)%></p>
+				<!-- 編集や削除のリンクは今後追加可能 -->
+			</div>
+			<%
+			}
+			%>
+		</div>
+	</div>
+</body>
+</html>

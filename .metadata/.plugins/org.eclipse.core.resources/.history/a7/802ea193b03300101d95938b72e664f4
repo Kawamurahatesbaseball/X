@@ -1,0 +1,55 @@
+package dao;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import model.User;
+
+public class UserDAO {
+    // データベース接続情報（適宜パスワードやユーザー名を自分の環境に合わせてください）
+    private static final String URL = "jdbc:mysql://localhost:3306/X_db?useSSL=false&serverTimezone=UTC";
+    private static final String DB_USER = "test";
+    private static final String DB_PASSWORD = "dyfkmochi941523";
+
+    // ユーザーを登録するメソッド
+    public static boolean insert(User user) {
+        String sql = "INSERT INTO users (name, password_hash) VALUES (?, ?)";
+
+        try (
+            Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setString(1, user.getName());
+            stmt.setString(2, user.getPasswordHash());
+
+            int rows = stmt.executeUpdate();
+            return rows == 1;
+        } catch (SQLException e) {
+            e.printStackTrace(); // エラーがあればコンソールに表示
+            return false;
+        }
+    }
+    
+    public static User findByName(String name) {
+        String sql = "SELECT * FROM users WHERE name = ?";
+        try (Connection conn = DriverManage.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, name);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                int id = rs.getInt("id");
+                String passwordHash = rs.getString("password_hash");
+                return new User(id, name, passwordHash);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+}

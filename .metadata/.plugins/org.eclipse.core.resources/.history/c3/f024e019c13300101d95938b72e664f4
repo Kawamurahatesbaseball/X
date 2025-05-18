@@ -1,0 +1,31 @@
+<%@ page contentType="text/html; charset=UTF-8"%>
+<%@ page import="model.User"%>
+<%
+User loginUser = (User) session.getAttribute("loginUser");
+if (loginUser == null) {
+	response.sendRedirect("login.jsp");
+	return;
+}
+%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>投稿する</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+	<div class="post-container">
+		<h2 class="post-title">新規投稿</h2>
+		<form action="post" method="post">
+			<textarea name="content" class="post-textarea" maxlength="280"
+				placeholder="いまどうしてる？" required></textarea>
+			<br>
+			<button type="submit" class="post-button">投稿</button>
+		</form>
+		<p>
+			<a href="timeline.jsp">← タイムラインに戻る</a>
+		</p>
+	</div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+package servlet;
+
+import java.io.IOException;
+
+import dao.UserDAO;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import model.User;
+import util.HashUtil;
+
+// このServletは /signup にマッピングされています
+@WebServlet("/signup")
+public class SignupServlet extends HttpServlet {
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        // フォームから送られてきた値を取得
+        String name = request.getParameter("name");
+        String password = request.getParameter("password");
+
+        // パスワードをハッシュ化（セキュリティのため）
+        String hashedPassword = HashUtil.hashPassword(password);
+
+        // Userオブジェクトを作成してDAOに渡す
+        User user = new User(name, hashedPassword);
+        boolean result = UserDAO.insert(user);
+
+        if (result) {
+            // 登録成功 → ログイン画面へリダイレクト
+            response.sendRedirect("login.jsp");
+        } else {
+            // 登録失敗 → エラーメッセージを表示
+            response.setContentType("text/html; charset=UTF-8");
+            response.getWriter().println("登録に失敗しました。もう一度お試しください。");
+        }
+    }
+}

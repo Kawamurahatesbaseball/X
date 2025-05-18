@@ -1,0 +1,31 @@
+<%@ page contentType="text/html; charset=UTF-8"%>
+<%@ page import="model.User"%>
+<%@ page import="jakarta.servlet.http.HttpSession"%>
+<%
+User loginUser = (User) session.getAttribute("loginUser");
+if (loginUser == null) {
+	response.sendRedirect("login.jsp");
+	return;
+}
+%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ホーム</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+	<div class="home-container">
+		<h1 class="home-title">
+			ようこそ、<%=loginUser.getName()%>
+			さん！
+		</h1>
+
+		<div class="home-menu">
+			<a href="post.jsp" class="home-button">投稿する</a> <a href="logout"
+				class="home-button">ログアウト</a>
+		</div>
+	</div>
+</body>
+</html>

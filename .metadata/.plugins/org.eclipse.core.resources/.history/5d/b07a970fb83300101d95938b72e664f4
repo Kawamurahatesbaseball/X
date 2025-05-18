@@ -1,0 +1,76 @@
+package dao;
+
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.util.*;
+
+import model.Post;
+
+public class PostDAO {
+	private static final String URL = "jdbc:mysql://localhost:3306/X_db?useSSL=false&serverTimezone=UTC";
+	private static final String DB_USER = "test";
+	private static final String DB_PASSWORD = "dyfkmochi941523";
+
+	// 投稿を保存
+	public static boolean insert(int userId, String content) {
+		String sql = "INSERT INTO posts (user_id, content) VALUES (?, ?)";
+
+		try (
+				Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+			stmt.setInt(1, userId);
+			stmt.setString(2, content);
+			return stmt.executeUpdate() == 1;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	// 投稿を取得（新しい順）
+	public static List<Post> findAll() {
+		List<Post> list = new ArrayList<>();
+		String sql = """
+				SELECT p.id, p.user_id, u.name, p.content, p.created_at
+				FROM posts p
+				JOIN users u ON p.user_id = u.id
+				ORDER BY p.created_at DESC
+				""";
+
+		try (
+				Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
+				PreparedStatement stmt = conn.prepareStatement(sql);
+				ResultSet rs = stmt.executeQuery()) {
+
+			while (rs.next()) {
+				list.add(new Post(
+						rs.getInt("id"),
+						rs.getInt("user_id"),
+						rs.getString("name"),
+						rs.getString("content"),
+						rs.getTimestamp("created_at").toLocalDateTime()));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return list;
+	}
+
+	// 投稿IDとユーザーIDを指定して削除（本人のみ削除可能）
+	public static boolean delete(int postId, int userId) {
+		String sql = "DELETE FROM posts WHERE id = ? AND user_id = ?";
+
+		try (
+				Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+			stmt.setInt(1, postId);
+			stmt.setInt(2, userId);
+			return stmt.executeUpdate() == 1;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+}

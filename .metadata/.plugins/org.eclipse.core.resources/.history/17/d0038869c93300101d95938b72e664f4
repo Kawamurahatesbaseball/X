@@ -1,0 +1,29 @@
+<%@ page contentType="text/html; charset=UTF-8"%>
+<%@ page import="model.User"%>
+<%@ page import="model.Post"%>
+<%@ page import="java.util.List"%>
+<%@ page import="java.time.format.DateTimeFormatter"%>
+
+<%
+    User profileUser = (User) request.getAttribute("profileUser");
+    List<Post> userPosts = (List<Post>) request.getAttribute("userPosts");
+    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+%>
+
+<h1><%= profileUser.getName() %>さんのプロフィール
+</h1>
+<c:if test="${not empty profileUser.iconUrl}">
+	<img src="${profileUser.iconUrl}" alt="アイコン" width="100" height="100">
+</c:if>
+
+<hr>
+
+<h2>投稿一覧</h2>
+<ul>
+	<% for(Post post : userPosts) { %>
+	<li><a href="profile?user_id=<%= post.getUserId() %>"><%= post.getUserName() %></a>
+		: <%= post.getContent() %> (いいね <%= post.getLikeCount() %> ) <% if(post.isLikedByUser()) { %>
+		<span>★いいね済み</span> <% } %> <br> 投稿日時: <%= dtf.format(post.getCreatedAt()) %>
+	</li>
+	<% } %>
+</ul>
