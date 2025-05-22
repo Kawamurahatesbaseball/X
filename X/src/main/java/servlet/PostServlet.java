@@ -10,37 +10,47 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.User;
-import util.EscapeUtil;
 
 @WebServlet("/post")
 public class PostServlet extends HttpServlet {
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+	@Override
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 
-        request.setCharacterEncoding("UTF-8");
-        HttpSession session = request.getSession(false);
-        User user = (User) session.getAttribute("loginUser");
+		request.setCharacterEncoding("UTF-8");
+		HttpSession session = request.getSession();
+		User loginUser = (User) session.getAttribute("loginUser");
 
-        if (user == null) {
-            response.sendRedirect("login.jsp");
-            return;
-        }
+		if (loginUser == null) {
+			response.sendRedirect("login.jsp");
+			return;
+		}
 
-        String content = EscapeUtil.escapeHtml(request.getParameter("content"));
+		String content = request.getParameter("content");
+		String parentPostIdStr = request.getParameter("parent_post_id"); // ← 追加
 
-        if (content == null || content.isBlank()) {
-            request.setAttribute("error", "投稿内容が空です。");
-            request.getRequestDispatcher("post.jsp").forward(request, response);
-            return;
-        }
+		if (content == null || content.trim().isEmpty()) {
+			response.sendRedirect("timeline.jsp");
+			return;
+		}
 
-        boolean success = PostDAO.insert(user.getId(), content);
+		// parent_post_id の処理
+		Integer parentPostId = null;
+		if (parentPostIdStr != null && !parentPostIdStr.isEmpty()) {
+			try {
+				parentPostId = Integer.parseInt(parentPostIdStr);
+			} catch (NumberFormatException e) {
+				e.printStackTrace(); // 不正な値が来た場合は無視（nullのまま）
+			}
+		}
 
-        if (success) {
-            response.sendRedirect("timeline");
-        } else {
-            request.setAttribute("error", "投稿に失敗しました。");
-            request.getRequestDispatcher("post.jsp").forward(request, response);
-        }
-    }
+		// 投稿の保存
+		boolean success = PostDAO.insert(loginUser.getId(), content, parentPostId);
+
+		if (!success) {
+			request.setAttribute("errorMessage", "投稿に失敗しました。");
+		}
+
+		response.sendRedirect("timeline");
+	}
 }

@@ -7,7 +7,7 @@ public class TokenUtil {
     private static final SecureRandom random = new SecureRandom();
 
     public static String generateToken() {
-        byte[] bytes = new byte[32];
+        byte[] bytes = new byte[32];// 32バイト = 256ビット
         random.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }

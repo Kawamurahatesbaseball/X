@@ -14,15 +14,27 @@ public class PostDAO {
 	private static final String DB_USER = "test";
 	private static final String DB_PASSWORD = "dyfkmochi941523";
 
-	// 投稿を保存
+	// 通常投稿の保存
 	public static boolean insert(int userId, String content) {
-		String sql = "INSERT INTO posts (user_id, content) VALUES (?, ?)";
+		return insert(userId, content, null); // parent_post_id なし
+	}
+
+	// 返信投稿の保存（parentPostId あり）
+	public static boolean insert(int userId, String content, Integer parentPostId) {
+		String sql = "INSERT INTO posts (user_id, content, parent_post_id) VALUES (?, ?, ?)";
 
 		try (
 				Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
 				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
 			stmt.setInt(1, userId);
 			stmt.setString(2, content);
+			if (parentPostId != null) {
+				stmt.setInt(3, parentPostId);
+			} else {
+				stmt.setNull(3, java.sql.Types.INTEGER);
+			}
+
 			return stmt.executeUpdate() == 1;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -30,19 +42,20 @@ public class PostDAO {
 		}
 	}
 
-	// 全投稿取得（いいね数、ログインユーザーのいいね状態も含む）
+	// 全投稿取得（いいね数、ログインユーザーのいいね状態、parent_post_id を含む）
 	public static List<Post> findAll(int currentUserId) {
 		List<Post> postList = new ArrayList<>();
 		String sql = """
-				SELECT
-				    p.id, p.user_id, u.name, p.content, p.created_at,
-				    (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) AS like_count,
-				    EXISTS (
-				        SELECT 1 FROM likes l2 WHERE l2.post_id = p.id AND l2.user_id = ?
-				    ) AS liked_by_user
-				FROM posts p
-				INNER JOIN users u ON p.user_id = u.id
-				ORDER BY p.created_at DESC
+					SELECT
+						p.id, p.user_id, u.name, p.content, p.created_at,
+						(SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) AS like_count,
+						EXISTS (
+							SELECT 1 FROM likes l2 WHERE l2.post_id = p.id AND l2.user_id = ?
+						) AS liked_by_user,
+						p.parent_post_id
+					FROM posts p
+					INNER JOIN users u ON p.user_id = u.id
+					ORDER BY p.created_at DESC
 				""";
 
 		try (
@@ -53,6 +66,10 @@ public class PostDAO {
 
 			try (ResultSet rs = stmt.executeQuery()) {
 				while (rs.next()) {
+					Integer parentPostId = rs.getObject("parent_post_id") != null
+							? rs.getInt("parent_post_id")
+							: null;
+
 					Post post = new Post(
 							rs.getInt("id"),
 							rs.getInt("user_id"),
@@ -60,7 +77,8 @@ public class PostDAO {
 							rs.getString("content"),
 							rs.getTimestamp("created_at").toLocalDateTime(),
 							rs.getInt("like_count"),
-							rs.getBoolean("liked_by_user"));
+							rs.getBoolean("liked_by_user"),
+							parentPostId);
 					postList.add(post);
 				}
 			}
@@ -70,20 +88,21 @@ public class PostDAO {
 		return postList;
 	}
 
-	// プロフィールユーザーの投稿一覧を取得（いいね判定用にログインユーザーIDも渡す）
+	// プロフィールユーザーの投稿取得（parent_post_id も含める）
 	public static List<Post> findByUserId(int profileUserId, int currentUserId) {
 		List<Post> postList = new ArrayList<>();
 		String sql = """
-				SELECT
-				    p.id, p.user_id, u.name, p.content, p.created_at,
-				    (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) AS like_count,
-				    EXISTS (
-				        SELECT 1 FROM likes l2 WHERE l2.post_id = p.id AND l2.user_id = ?
-				    ) AS liked_by_user
-				FROM posts p
-				INNER JOIN users u ON p.user_id = u.id
-				WHERE p.user_id = ?
-				ORDER BY p.created_at DESC
+					SELECT
+						p.id, p.user_id, u.name, p.content, p.created_at,
+						(SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) AS like_count,
+						EXISTS (
+							SELECT 1 FROM likes l2 WHERE l2.post_id = p.id AND l2.user_id = ?
+						) AS liked_by_user,
+						p.parent_post_id
+					FROM posts p
+					INNER JOIN users u ON p.user_id = u.id
+					WHERE p.user_id = ?
+					ORDER BY p.created_at DESC
 				""";
 
 		try (
@@ -95,6 +114,10 @@ public class PostDAO {
 
 			try (ResultSet rs = stmt.executeQuery()) {
 				while (rs.next()) {
+					Integer parentPostId = rs.getObject("parent_post_id") != null
+							? rs.getInt("parent_post_id")
+							: null;
+
 					Post post = new Post(
 							rs.getInt("id"),
 							rs.getInt("user_id"),
@@ -102,7 +125,8 @@ public class PostDAO {
 							rs.getString("content"),
 							rs.getTimestamp("created_at").toLocalDateTime(),
 							rs.getInt("like_count"),
-							rs.getBoolean("liked_by_user"));
+							rs.getBoolean("liked_by_user"),
+							parentPostId);
 					postList.add(post);
 				}
 			}
@@ -119,6 +143,7 @@ public class PostDAO {
 		try (
 				Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
 				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
 			stmt.setInt(1, postId);
 			stmt.setInt(2, userId);
 			return stmt.executeUpdate() == 1;

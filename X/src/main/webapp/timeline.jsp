@@ -2,6 +2,9 @@
 <%@ page import="model.User"%>
 <%@ page import="model.Post"%>
 <%@ page import="java.util.List"%>
+<%@ page import="java.util.ArrayList"%>
+<%@ page import="java.util.HashMap"%>
+<%@ page import="java.util.Map"%>
 <%@ page import="java.time.format.DateTimeFormatter"%>
 
 <%
@@ -14,20 +17,235 @@ if (loginUser == null) {
 }
 
 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+// 投稿を親投稿と返信投稿に分ける準備
+List<Post> parentPosts = new ArrayList<>();
+Map<Integer, List<Post>> repliesMap = new HashMap<>();
+
+if (posts != null) {
+	for (Post post : posts) {
+		Integer parentId = post.getParentPostId();
+		if (parentId == null) {
+	parentPosts.add(post);
+		} else {
+	repliesMap.computeIfAbsent(parentId, k -> new ArrayList<>()).add(post);
+		}
+	}
+}
 %>
 
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ホーム</title>
-<link rel="stylesheet" href="style.css">
+<title>タイムライン</title>
+<style>
+body {
+	font-family: 'Helvetica', sans-serif;
+	background-color: #f0f2f5;
+	margin: 0;
+	padding: 0;
+}
+
+.container {
+	max-width: 600px;
+	margin: 30px auto;
+	background: #fff;
+	border-radius: 10px;
+	padding: 20px;
+	box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.welcome {
+	font-size: 20px;
+	margin-bottom: 20px;
+}
+
+.welcome a {
+	text-decoration: none;
+	color: #333;
+}
+
+.post-form {
+	margin-bottom: 20px;
+}
+
+.post-textarea {
+	width: 100%;
+	padding: 10px;
+	border-radius: 8px;
+	border: 1px solid #ccc;
+	font-size: 14px;
+	resize: vertical;
+	box-sizing: border-box;
+	word-wrap: break-word; /* 改良 */
+}
+
+.post-button {
+	background-color: #1da1f2;
+	color: #fff;
+	border: none;
+	padding: 8px 14px;
+	border-radius: 20px;
+	cursor: pointer;
+	font-size: 14px;
+	/* float解除してflexで右寄せに変更 */
+}
+
+.post-button:hover {
+	background-color: #0d8ddb;
+}
+
+.logout-link {
+	display: inline-block;
+	margin-top: 10px;
+	color: #888;
+	text-decoration: none;
+	font-size: 14px;
+}
+
+.logout-link:hover {
+	text-decoration: underline;
+}
+
+.post-list {
+	margin-top: 30px;
+}
+
+.post-item {
+	background: #fefefe;
+	padding: 15px;
+	border-radius: 10px;
+	margin-bottom: 15px;
+	border: 1px solid #ddd;
+	max-width: 100%;
+	word-wrap: break-word; /* 長い文章の折り返し */
+	box-sizing: border-box;
+}
+
+.post-user {
+	font-weight: bold;
+	color: #333;
+	margin-bottom: 5px;
+}
+
+.post-content {
+	font-size: 15px;
+	margin: 10px 0;
+	white-space: pre-wrap;
+	word-wrap: break-word; /* ここも追加 */
+}
+
+.post-date {
+	font-size: 12px;
+	color: #999;
+	margin-bottom: 10px;
+}
+
+.action-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 10px;
+	flex-wrap: wrap; /* 横幅狭くなったときの折返し対応 */
+	gap: 8px;
+}
+
+.like-button {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	font-size: 16px;
+	color: #e0245e;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	border-radius: 20px;
+	transition: background-color 0.2s ease;
+}
+
+.like-button:hover {
+	background-color: #ffe6f0;
+}
+
+.like-text {
+	font-size: 18px;
+	line-height: 1;
+}
+
+.like-count {
+	font-size: 14px;
+	color: #555;
+}
+
+.reply-form {
+	flex-grow: 1;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.reply-textarea {
+	flex-grow: 1;
+	padding: 6px 10px;
+	border-radius: 8px;
+	border: 1px solid #ccc;
+	font-size: 14px;
+	resize: vertical;
+	height: 40px;
+	box-sizing: border-box;
+}
+
+.reply-submit {
+	background-color: #1da1f2;
+	color: #fff;
+	border: none;
+	padding: 6px 14px;
+	border-radius: 20px;
+	cursor: pointer;
+	font-size: 14px;
+	white-space: nowrap;
+}
+
+.reply-submit:hover {
+	background-color: #0d8ddb;
+}
+
+.delete-form {
+	/* 削除ボタンのフォームを固定幅に */
+	min-width: 80px;
+}
+
+.delete-button {
+	background-color: #ff4444;
+	color: #fff;
+	border: none;
+	padding: 6px 14px;
+	border-radius: 20px;
+	cursor: pointer;
+	font-size: 13px;
+	white-space: nowrap;
+}
+
+.delete-button:hover {
+	background-color: #cc0000;
+}
+
+/* 返信投稿の見た目 */
+.reply-item {
+	margin-left: 30px;
+	background-color: #f9f9f9;
+}
+</style>
+
 </head>
 <body>
 	<div class="container">
 
 		<h1 class="welcome">
-			<a href="profile?user_id=<%=loginUser.getId()%>"><%=loginUser.getName()%>のタイムライン</a>
+			<a href="profile?user_id=<%=loginUser.getId()%>"> <%=loginUser.getName()%>のタイムライン
+			</a>
 		</h1>
 
 		<form action="post" method="post" class="post-form">
@@ -36,28 +254,75 @@ DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 			<button type="submit" class="post-button">投稿</button>
 		</form>
 
-		<p>
-			<a href="logout" class="logout-link">ログアウト</a>
-		</p>
+		<a href="logout" class="logout-link">ログアウト</a>
 
 		<div class="post-list">
 			<%
-			if (posts != null) {
-				for (Post post : posts) {
+			// 親投稿を表示
+			for (Post parentPost : parentPosts) {
 			%>
 			<div class="post-item">
-				<p class="post-user">
-					<strong><%=post.getUserName()%></strong>
-				</p>
-				<p class="post-content"><%=post.getContent()%></p>
-				<p class="post-date"><%=post.getCreatedAt().format(formatter)%></p>
+				<p class="post-user"><%=parentPost.getUserName()%></p>
+				<p class="post-content"><%=parentPost.getContent()%></p>
+				<p class="post-date"><%=parentPost.getCreatedAt().format(formatter)%></p>
+
+				<div class="action-row">
+					<!-- いいねボタン -->
+					<button class="like-button" data-post-id="<%=parentPost.getId()%>">
+						<span class="like-text"><%=parentPost.isLikedByCurrentUser() ? "♥" : "♡"%></span>
+						<span class="like-count"><%=parentPost.getLikeCount()%></span>
+					</button>
+
+					<!-- 削除ボタン -->
+					<%
+					if (parentPost.getUserId() == loginUser.getId()) {
+					%>
+					<form action="delete" method="post" class="delete-form"
+						onsubmit="return confirm('この投稿を削除しますか？');">
+						<input type="hidden" name="post_id"
+							value="<%=parentPost.getId()%>">
+						<button type="submit" class="delete-button">削除</button>
+					</form>
+					<%
+					}
+					%>
+				</div>
+
+				<!-- 返信フォーム -->
+				<form action="post" method="post" class="reply-form"
+					style="margin-top: 10px;">
+					<input type="hidden" name="parent_post_id"
+						value="<%=parentPost.getId()%>">
+					<textarea name="content" maxlength="280" required
+						placeholder="返信する" class="reply-textarea"></textarea>
+					<button type="submit" class="reply-submit">返信</button>
+				</form>
+			</div>
+
+
+			<%
+			// 返信投稿を表示
+			List<Post> replies = repliesMap.get(parentPost.getId());
+			if (replies != null) {
+				for (Post reply : replies) {
+			%>
+			<div class="post-item reply-item">
+				<p class="post-user"><%=reply.getUserName()%></p>
+				<p class="post-content"><%=reply.getContent()%></p>
+				<p class="post-date"><%=reply.getCreatedAt().format(formatter)%></p>
+
+				<!-- いいねボタン -->
+				<button class="like-button" data-post-id="<%=reply.getId()%>">
+					<span class="like-text"><%=reply.isLikedByCurrentUser() ? "♥" : "♡"%></span>
+					<span class="like-count"><%=reply.getLikeCount()%></span>
+				</button>
 
 				<%
-				if (post.getUserId() == loginUser.getId()) {
+				if (reply.getUserId() == loginUser.getId()) {
 				%>
 				<form action="delete" method="post" class="delete-form"
 					onsubmit="return confirm('この投稿を削除しますか？');">
-					<input type="hidden" name="post_id" value="<%=post.getId()%>">
+					<input type="hidden" name="post_id" value="<%=reply.getId()%>">
 					<button type="submit" class="delete-button">削除</button>
 				</form>
 				<%
@@ -67,9 +332,45 @@ DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 			<%
 			}
 			}
+			}
 			%>
 		</div>
 
 	</div>
+
+	<script>
+		document.querySelectorAll('.like-button').forEach(button => {
+			button.addEventListener('click', function() {
+				const postId = this.dataset.postId;
+
+				fetch('like', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/x-www-form-urlencoded'
+					},
+					body: 'post_id=' + encodeURIComponent(postId)
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);
+						return;
+					}
+					const likeText = this.querySelector('.like-text');
+					const likeCount = this.querySelector('.like-count');
+
+					if (data.hasLiked) {
+						likeText.textContent = '♥';
+					} else {
+						likeText.textContent = '♡';
+					}
+
+					likeCount.textContent = data.likeCount;
+				})
+				.catch(() => alert('通信エラーが発生しました'));
+			});
+		});
+	</script>
+
 </body>
 </html>

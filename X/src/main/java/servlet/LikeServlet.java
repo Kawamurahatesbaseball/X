@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.User;
+//import com.google.gson.JsonObject; // gsonライブラリ必要です（Mavenやjar追加）
 
 @WebServlet("/like")
 public class LikeServlet extends HttpServlet {
@@ -36,3 +37,41 @@ public class LikeServlet extends HttpServlet {
 		response.sendRedirect("timeline"); // タイムラインに戻る
 	}
 }
+
+//protected void doPost(HttpServletRequest request, HttpServletResponse response)
+//        throws ServletException, IOException {
+//
+//    response.setContentType("application/json; charset=UTF-8");
+//
+//    HttpSession session = request.getSession(false);
+//    User loginUser = (User) session.getAttribute("loginUser");
+//
+//    JsonObject json = new JsonObject();
+//
+//    if (loginUser == null) {
+//        json.addProperty("error", "ログインしてください");
+//        response.getWriter().write(json.toString());
+//        return;
+//    }
+//
+//    int postId = Integer.parseInt(request.getParameter("post_id"));
+//    boolean hasLiked = LikeDAO.hasLiked(loginUser.getId(), postId);
+//
+//    boolean success;
+//    if (hasLiked) {
+//        success = LikeDAO.removeLike(loginUser.getId(), postId);
+//    } else {
+//        success = LikeDAO.addLike(loginUser.getId(), postId);
+//    }
+//
+//    if (success) {
+//        int likeCount = LikeDAO.countLikes(postId);
+//        boolean newHasLiked = LikeDAO.hasLiked(loginUser.getId(), postId);
+//        json.addProperty("likeCount", likeCount);
+//        json.addProperty("hasLiked", newHasLiked);
+//    } else {
+//        json.addProperty("error", "処理に失敗しました");
+//    }
+//
+//    response.getWriter().write(json.toString());
+//}

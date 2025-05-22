@@ -11,9 +11,11 @@ public class Post {
 	private int likeCount;
 	private boolean likedByCurrentUser;
 
+	private Integer parentPostId; // 追加: 親投稿ID。nullなら通常投稿
+
 	// コンストラクタ（投稿一覧用）
 	public Post(int id, int userId, String userName, String content, LocalDateTime createdAt,
-			int likeCount, boolean likedByCurrentUser) {
+			int likeCount, boolean likedByCurrentUser, Integer parentPostId) { // 追加
 		this.id = id;
 		this.userId = userId;
 		this.userName = userName;
@@ -21,6 +23,7 @@ public class Post {
 		this.createdAt = createdAt;
 		this.likeCount = likeCount;
 		this.likedByCurrentUser = likedByCurrentUser;
+		this.parentPostId = parentPostId;
 	}
 
 	// ゲッター
@@ -50,5 +53,9 @@ public class Post {
 
 	public boolean isLikedByCurrentUser() {
 		return likedByCurrentUser;
+	}
+
+	public Integer getParentPostId() { // 追加
+		return parentPostId;
 	}
 }

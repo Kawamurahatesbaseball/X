@@ -16,7 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.User;
 
-@WebFilter("/*")
+@WebFilter("/*")// 「/*」はすべてのリクエストに適応するという意味
 public class AutoLoginFilter implements Filter {
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
@@ -25,7 +25,7 @@ public class AutoLoginFilter implements Filter {
 		HttpServletResponse res = (HttpServletResponse) response;
 		HttpSession session = req.getSession(false);
 
-		if (session == null || session.getAttribute("loginUser") == null) {
+		if (session == null || session.getAttribute("loginUser") == null) { //ログイン状態でなければCookieでトークンを探す
 			Cookie[] cookies = req.getCookies();
 			if (cookies != null) {
 				for (Cookie cookie : cookies) {

@@ -20,35 +20,59 @@ if (profileUser == null) {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>プロフィール</title>
+<title><%=profileUser.getName()%>のプロフィール</title>
 <link rel="stylesheet" href="style.css">
 <style>
 .menu {
-	position: absolute;
+	position: fixed;
 	top: 20px;
 	left: 20px;
-	padding: 10px;
-	background-color: #f7f7f7;
-	border-radius: 8px;
-	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+	padding: 15px;
+	background-color: #f9f9f9;
+	border-radius: 12px;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .menu-link {
 	display: block;
-	margin-bottom: 10px;
+	margin-bottom: 12px;
 	color: #333;
 	text-decoration: none;
 	font-weight: bold;
+	transition: color 0.2s;
 }
 
 .menu-link:hover {
+	color: #007bff;
+}
+
+.post-item {
+	border: 1px solid #ddd;
+	border-radius: 10px;
+	padding: 12px;
+	margin-bottom: 15px;
+	background-color: #fff;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.post-user-link {
+	color: #007bff;
+	text-decoration: none;
+}
+
+.post-user-link:hover {
 	text-decoration: underline;
+}
+
+.liked-star {
+	color: #e91e63;
+	font-weight: bold;
+	margin-left: 10px;
 }
 </style>
 </head>
 <body>
-
-	<%-- 左メニュー --%>
+	<!-- 左メニュー -->
 	<div class="menu">
 		<%
 		if (loginUser != null && loginUser.getId() == profileUser.getId()) {
@@ -60,15 +84,16 @@ if (profileUser == null) {
 		<a href="timeline" class="menu-link">タイムライン</a>
 	</div>
 
+	<!-- メインコンテンツ -->
 	<div class="container">
 		<h1 class="welcome"><%=profileUser.getName()%>さんのプロフィール
 		</h1>
 
 		<p>
 			<strong>自己紹介:</strong>
-			<%=profileUser.getBio() != null && !profileUser.getBio().isEmpty()
+			<%=(profileUser.getBio() != null && !profileUser.getBio().isEmpty())
 		? profileUser.getBio()
-		: "まだ自己紹介がありません"%>
+		: "よろしくお願いします。"%>
 		</p>
 
 		<hr>
@@ -88,8 +113,7 @@ if (profileUser == null) {
 				<p class="post-content"><%=post.getContent()%></p>
 				<p class="post-date">
 					投稿日:
-					<%=dtf.format(post.getCreatedAt())%>
-				</p>
+					<%=dtf.format(post.getCreatedAt())%></p>
 				<p class="post-likes">
 					いいね
 					<%=post.getLikeCount()%>
