@@ -1,4 +1,11 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
+<%@ page import="model.User"%>
+<%@ page import="model.Post"%>
+<%@ page import="java.util.List"%>
+<%@ page import="java.util.ArrayList"%>
+<%@ page import="java.util.HashMap"%>
+<%@ page import="java.util.Map"%>
+<%@ page import="java.time.format.DateTimeFormatter"%>
 
 <!DOCTYPE html>
 <html>
