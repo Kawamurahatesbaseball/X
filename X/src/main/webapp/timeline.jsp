@@ -34,6 +34,7 @@ if (posts != null) {
 }
 %>
 
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -121,6 +122,7 @@ body {
 	max-width: 100%;
 	word-wrap: break-word; /* 長い文章の折り返し */
 	box-sizing: border-box;
+	position: relative;
 }
 
 .post-user {
@@ -213,23 +215,51 @@ body {
 }
 
 .delete-form {
-	/* 削除ボタンのフォームを固定幅に */
-	min-width: 80px;
+	position: absolute;
+	top: 10px;
+	right: 10px;
 }
 
 .delete-button {
-	background-color: #ff4444;
-	color: #fff;
+	background-color: #e0e0e0;
+	color: #555;
 	border: none;
-	padding: 6px 14px;
-	border-radius: 20px;
+	padding: 5px 12px;
+	border-radius: 15px;
 	cursor: pointer;
-	font-size: 13px;
-	white-space: nowrap;
+	font-size: 12px;
+	border: none;
+	padding: 5px 12px;
+	border-radius: 15px;
+	cursor: pointer;
+	border-radius: 15px;
+	cursor: pointer;
+	font-size: 12px;
+	border: none;
+	cursor: pointer;
+	font-size: 12px;
+	border: none;
+	border: none;
+	padding: 5px 12px;
+	border-radius: 15px;
+	cursor: pointer;
+	border-radius: 15px;
+	cursor: pointer;
+	font-size: 12px;
+	border: none;
+	cursor: pointer;
+	padding: 5px 12px;
+	border-radius: 15px;
+	cursor: pointer;
+	border-radius: 15px;
+	cursor: pointer;
+	font-size: 12px;
+	border: none;
+	cursor: pointer;
 }
 
 .delete-button:hover {
-	background-color: #cc0000;
+	background-color: #ccc;
 }
 
 /* 返信投稿の見た目 */
@@ -272,6 +302,13 @@ body {
 						<span class="like-text"><%=parentPost.isLikedByCurrentUser() ? "♥" : "♡"%></span>
 						<span class="like-count"><%=parentPost.getLikeCount()%></span>
 					</button>
+
+					<!-- formを使用したいいねボタン -->
+					<%-- <input type="hidden" name="post_id" value="<%=parentPost.getId()%>">
+					<button type="submit" class="like-button">
+						<span class="like-text"><%=parentPost.isLikedByCurrentUser() ? "♥" : "♡"%></span>
+						<span class="like-count"><%=parentPost.getLikeCount()%></span>
+					</button> --%>
 
 					<!-- 削除ボタン -->
 					<%
@@ -338,39 +375,63 @@ body {
 
 	</div>
 
-	<script>
-		document.querySelectorAll('.like-button').forEach(button => {
-			button.addEventListener('click', function() {
-				const postId = this.dataset.postId;
+	<!--  <script>
+document.querySelectorAll('.like-button').forEach(button => {
+	button.addEventListener('click', function () {
+		const postId = this.dataset.postId;
 
-				fetch('like', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/x-www-form-urlencoded'
-					},
-					body: 'post_id=' + encodeURIComponent(postId)
-				})
-				.then(response => response.json())
-				.then(data => {
-					if (data.error) {
-						alert(data.error);
-						return;
-					}
-					const likeText = this.querySelector('.like-text');
-					const likeCount = this.querySelector('.like-count');
+		// POSTリクエストを送信
+		fetch('like', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded'
+			},
+			body: 'post_id=' + encodeURIComponent(postId)
+		})
+		.then(response => {
+			if (!response.ok) {
+				// ステータスエラー（例: 401 Unauthorized）
+				console.error('HTTP error:', response.status);
+				return;
+			}
+			return response.json();
+		})
+		.then(data => {
+			if (!data) return; // 無効なレスポンスの場合
 
-					if (data.hasLiked) {
-						likeText.textContent = '♥';
-					} else {
-						likeText.textContent = '♡';
-					}
-
-					likeCount.textContent = data.likeCount;
-				})
-				.catch(() => alert('通信エラーが発生しました'));
-			});
+			// 自動でページをリロード
+			location.reload();
+		})
+		.catch(error => {
+			console.error("通信エラー:", error);
 		});
-	</script>
+	});
+});
+</script> -->
+
+	<script>
+document.querySelectorAll('.like-button').forEach(button => {
+	button.addEventListener('click', function () {
+		const postId = this.dataset.postId;
+
+		// POSTリクエストを送信
+		fetch('like', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded'
+			},
+			body: 'post_id=' + encodeURIComponent(postId)
+		})
+		.finally(() => {
+			// 通信成功・失敗にかかわらず常にページリロード
+			location.reload();
+		});
+	});
+});
+</script>
+
+
+
 
 </body>
 </html>

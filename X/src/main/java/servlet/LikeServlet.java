@@ -2,6 +2,8 @@ package servlet;
 
 import java.io.IOException;
 
+import com.google.gson.JsonObject;
+
 import dao.LikeDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -10,68 +12,55 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.User;
-//import com.google.gson.JsonObject; // gsonライブラリ必要です（Mavenやjar追加）
 
 @WebServlet("/like")
 public class LikeServlet extends HttpServlet {
+	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
-		HttpSession session = request.getSession(false);
-		User loginUser = (User) session.getAttribute("loginUser");
+		request.setCharacterEncoding("UTF-8");
+		response.setContentType("application/json; charset=UTF-8");
 
+		HttpSession session = request.getSession(false);
+		User loginUser = (User) (session != null ? session.getAttribute("loginUser") : null);
 		if (loginUser == null) {
-			response.sendRedirect("login.jsp");
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 			return;
 		}
 
-		int postId = Integer.parseInt(request.getParameter("post_id"));
-		boolean hasLiked = LikeDAO.hasLiked(loginUser.getId(), postId);
-
-		if (hasLiked) {
-			LikeDAO.removeLike(loginUser.getId(), postId);
-		} else {
-			LikeDAO.addLike(loginUser.getId(), postId);
+		String postIdParam = request.getParameter("post_id");
+		if (postIdParam == null) {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "post_idがありません");
+			return;
 		}
 
-		response.sendRedirect("timeline"); // タイムラインに戻る
+		int postId;
+		try {
+			postId = Integer.parseInt(postIdParam);
+		} catch (NumberFormatException e) {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "post_idが不正です");
+			return;
+		}
+
+		boolean hasLiked = LikeDAO.hasLiked(loginUser.getId(), postId);
+		boolean success;
+		if (hasLiked) {
+			success = LikeDAO.removeLike(loginUser.getId(), postId);
+		} else {
+			success = LikeDAO.addLike(loginUser.getId(), postId);
+		}
+
+		if (!success) {
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "DB処理に失敗しました");
+			return;
+		}
+
+		// 成功時のJSONレスポンス
+		JsonObject json = new JsonObject();
+		json.addProperty("hasLiked", !hasLiked);
+		json.addProperty("likeCount", LikeDAO.countLikes(postId));
+
+		response.getWriter().print(json.toString());
 	}
 }
-
-//protected void doPost(HttpServletRequest request, HttpServletResponse response)
-//        throws ServletException, IOException {
-//
-//    response.setContentType("application/json; charset=UTF-8");
-//
-//    HttpSession session = request.getSession(false);
-//    User loginUser = (User) session.getAttribute("loginUser");
-//
-//    JsonObject json = new JsonObject();
-//
-//    if (loginUser == null) {
-//        json.addProperty("error", "ログインしてください");
-//        response.getWriter().write(json.toString());
-//        return;
-//    }
-//
-//    int postId = Integer.parseInt(request.getParameter("post_id"));
-//    boolean hasLiked = LikeDAO.hasLiked(loginUser.getId(), postId);
-//
-//    boolean success;
-//    if (hasLiked) {
-//        success = LikeDAO.removeLike(loginUser.getId(), postId);
-//    } else {
-//        success = LikeDAO.addLike(loginUser.getId(), postId);
-//    }
-//
-//    if (success) {
-//        int likeCount = LikeDAO.countLikes(postId);
-//        boolean newHasLiked = LikeDAO.hasLiked(loginUser.getId(), postId);
-//        json.addProperty("likeCount", likeCount);
-//        json.addProperty("hasLiked", newHasLiked);
-//    } else {
-//        json.addProperty("error", "処理に失敗しました");
-//    }
-//
-//    response.getWriter().write(json.toString());
-//}
