@@ -1,0 +1,138 @@
+package dao;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import model.User;
+import util.DBUtil;
+
+public class FollowDAO {
+
+	// フォローする
+	public static boolean follow(int followerId, int followeeId) {
+		String sql = "INSERT IGNORE INTO follows (follower_id, followee_id) VALUES (?, ?)";
+		try (Connection conn = DBUtil.getConnection();
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setInt(1, followerId);
+			stmt.setInt(2, followeeId);
+			int result = stmt.executeUpdate();
+			return result > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	// フォロー解除
+	public static boolean unfollow(int followerId, int followeeId) {
+		String sql = "DELETE FROM follows WHERE follower_id = ? AND followee_id = ?";
+		try (Connection conn = DBUtil.getConnection();
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setInt(1, followerId);
+			stmt.setInt(2, followeeId);
+			int result = stmt.executeUpdate();
+			return result > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	// フォローしているかどうか
+	public static boolean isFollowing(int followerId, int followeeId) {
+		String sql = "SELECT COUNT(*) FROM follows WHERE follower_id = ? AND followee_id = ?";
+		try (Connection conn = DBUtil.getConnection();
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setInt(1, followerId);
+			stmt.setInt(2, followeeId);
+			ResultSet rs = stmt.executeQuery();
+			if (rs.next()) {
+				return rs.getInt(1) > 0;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	// フォロー数
+	public static int countFollowing(int userId) {
+		String sql = "SELECT COUNT(*) FROM follows WHERE follower_id = ?";
+		try (Connection conn = DBUtil.getConnection();
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setInt(1, userId);
+			ResultSet rs = stmt.executeQuery();
+			if (rs.next()) {
+				return rs.getInt(1);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	// フォロワー数
+	public static int countFollowers(int userId) {
+		String sql = "SELECT COUNT(*) FROM follows WHERE followee_id = ?";
+		try (Connection conn = DBUtil.getConnection();
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setInt(1, userId);
+			ResultSet rs = stmt.executeQuery();
+			if (rs.next()) {
+				return rs.getInt(1);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	// フォロー中のユーザーID一覧（List<Integer>）
+	public static List<Integer> getFollowingIds(int userId) {
+		List<Integer> ids = new ArrayList<>();
+		String sql = "SELECT followee_id FROM follows WHERE follower_id = ?";
+		try (Connection conn = DBUtil.getConnection();
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setInt(1, userId);
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				ids.add(rs.getInt("followee_id"));
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return ids;
+	}
+
+	// フォロワーのユーザーID一覧（List<Integer>）
+	public static List<Integer> getFollowerIds(int userId) {
+		List<Integer> ids = new ArrayList<>();
+		String sql = "SELECT follower_id FROM follows WHERE followee_id = ?";
+		try (Connection conn = DBUtil.getConnection();
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setInt(1, userId);
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				ids.add(rs.getInt("follower_id"));
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return ids;
+	}
+}

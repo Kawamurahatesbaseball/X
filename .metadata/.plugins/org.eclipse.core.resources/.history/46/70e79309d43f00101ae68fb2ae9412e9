@@ -1,0 +1,62 @@
+package servlet;
+
+import java.io.IOException;
+import java.util.*;
+
+import dao.PostDAO;
+import dao.FollowDAO;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import model.Post;
+import model.User;
+
+@WebServlet("/timeline")
+public class TimelineServlet extends HttpServlet {
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+
+		// セッションの取得とログインチェック
+		HttpSession session = request.getSession(false);
+		if (session == null || session.getAttribute("loginUser") == null) {
+			response.sendRedirect("login.jsp");
+			return;
+		}
+
+		User loginUser = (User) session.getAttribute("loginUser");
+
+		// 投稿一覧を取得（ログインユーザーに応じた表示）
+		List<Post> posts = PostDAO.findAll(loginUser.getId());
+		request.setAttribute("posts", posts);
+
+		// フォロー情報を格納するための処理
+		FollowDAO followDAO = new FollowDAO();
+		Set<Integer> processedUserIds = new HashSet<>();
+
+		for (Post post : posts) {
+			int postUserId = post.getUserId();
+
+			// 自分自身はスキップ
+			if (postUserId == loginUser.getId())
+				continue;
+
+			// 同一ユーザーに対して複数回DBアクセスしない
+			if (!processedUserIds.contains(postUserId)) {
+				boolean isFollowing = followDAO.isFollowing(loginUser.getId(), postUserId);
+				int followerCount = followDAO.getFollowerCount(postUserId);
+
+				// isFollowing_ユーザーID, followerCount_ユーザーID の形式で格納
+				request.setAttribute("isFollowing_" + postUserId, isFollowing);
+				request.setAttribute("followerCount_" + postUserId, followerCount);
+
+				processedUserIds.add(postUserId);
+			}
+		}
+
+		// timeline.jsp にフォワード
+		request.getRequestDispatcher("timeline.jsp").forward(request, response);
+	}
+}
