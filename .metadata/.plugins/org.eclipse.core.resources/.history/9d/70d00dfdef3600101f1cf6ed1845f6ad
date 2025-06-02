@@ -1,0 +1,155 @@
+package dao;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+
+import model.Post;
+
+public class PostDAO {
+	private static final String URL = "jdbc:mysql://localhost:3306/X_db?useSSL=false&serverTimezone=UTC";
+	private static final String DB_USER = "test";
+	private static final String DB_PASSWORD = "dyfkmochi941523";
+
+	// 通常投稿の保存
+	public static boolean insert(int userId, String content) {
+		return insert(userId, content, null); // parent_post_id なし
+	}
+
+	// 返信投稿の保存（parentPostId あり）
+	public static boolean insert(int userId, String content, Integer parentPostId) {
+		String sql = "INSERT INTO posts (user_id, content, parent_post_id) VALUES (?, ?, ?)";
+
+		try (
+				Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setInt(1, userId);
+			stmt.setString(2, content);
+			if (parentPostId != null) {
+				stmt.setInt(3, parentPostId);
+			} else {
+				stmt.setNull(3, java.sql.Types.INTEGER);
+			}
+
+			return stmt.executeUpdate() == 1;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	// 全投稿取得（いいね数、ログインユーザーのいいね状態、parent_post_id を含む）
+	public static List<Post> findAll(int currentUserId) {
+		List<Post> postList = new ArrayList<>();
+		String sql = """
+					SELECT
+						p.id, p.user_id, u.name, p.content, p.created_at,
+						(SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) AS like_count,
+						EXISTS (
+							SELECT 1 FROM likes l2 WHERE l2.post_id = p.id AND l2.user_id = ?
+						) AS liked_by_user,
+						p.parent_post_id
+					FROM posts p
+					INNER JOIN users u ON p.user_id = u.id
+					ORDER BY p.created_at DESC
+				""";
+
+		try (
+				Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setInt(1, currentUserId);
+
+			try (ResultSet rs = stmt.executeQuery()) {
+				while (rs.next()) {
+					Integer parentPostId = rs.getObject("parent_post_id") != null
+							? rs.getInt("parent_post_id")
+							: null;
+
+					Post post = new Post(
+							rs.getInt("id"),
+							rs.getInt("user_id"),
+							rs.getString("name"),
+							rs.getString("content"),
+							rs.getTimestamp("created_at").toLocalDateTime(),
+							rs.getInt("like_count"),
+							rs.getBoolean("liked_by_user"),
+							parentPostId);
+					postList.add(post);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return postList;
+	}
+
+	// プロフィールユーザーの投稿取得（parent_post_id も含める）
+	public static List<Post> findByUserId(int profileUserId, int currentUserId) {
+		List<Post> postList = new ArrayList<>();
+		String sql = """
+					SELECT
+						p.id, p.user_id, u.name, p.content, p.created_at,
+						(SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) AS like_count,
+						EXISTS (
+							SELECT 1 FROM likes l2 WHERE l2.post_id = p.id AND l2.user_id = ?
+						) AS liked_by_user,
+						p.parent_post_id
+					FROM posts p
+					INNER JOIN users u ON p.user_id = u.id
+					WHERE p.user_id = ?
+					ORDER BY p.created_at DESC
+				""";
+
+		try (
+				Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setInt(1, currentUserId);
+			stmt.setInt(2, profileUserId);
+
+			try (ResultSet rs = stmt.executeQuery()) {
+				while (rs.next()) {
+					Integer parentPostId = rs.getObject("parent_post_id") != null
+							? rs.getInt("parent_post_id")
+							: null;
+
+					Post post = new Post(
+							rs.getInt("id"),
+							rs.getInt("user_id"),
+							rs.getString("name"),
+							rs.getString("content"),
+							rs.getTimestamp("created_at").toLocalDateTime(),
+							rs.getInt("like_count"),
+							rs.getBoolean("liked_by_user"),
+							parentPostId);
+					postList.add(post);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return postList;
+	}
+
+	// 投稿削除（投稿IDとユーザーIDが一致する場合のみ）
+	public static boolean delete(int postId, int userId) {
+		String sql = "DELETE FROM posts WHERE id = ? AND user_id = ?";
+
+		try (
+				Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setInt(1, postId);
+			stmt.setInt(2, userId);
+			return stmt.executeUpdate() == 1;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+}

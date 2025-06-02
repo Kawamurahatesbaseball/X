@@ -155,3 +155,75 @@
 .menu-link:hover {
     text-decoration: underline;
 }
+
+body {
+  font-family: "Helvetica", sans-serif;
+  background-color: #f0f2f5;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 600px;
+  margin: 30px auto;
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.welcome a {
+  text-decoration: none;
+  color: #333;
+}
+
+.post-form textarea,
+.reply-form textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  resize: vertical;
+  font-size: 14px;
+}
+
+.post-button,
+.reply-form button,
+.delete-button,
+.like-button {
+  background-color: #1da1f2;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.post-button:hover,
+.reply-form button:hover,
+.delete-button:hover,
+.like-button:hover {
+  background-color: #0d8ddb;
+}
+
+.like-button.liked {
+  background-color: #ffcc00;
+  color: #333;
+}
+
+.post-item {
+  background: #fdfdfd;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+}
+
+.post-reply {
+  margin-top: 10px;
+  margin-left: 30px;
+  border-left: 2px solid #ccc;
+  padding-left: 10px;
+}

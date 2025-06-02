@@ -1,0 +1,497 @@
+<%@ page contentType="text/html; charset=UTF-8"%>
+<%@ page import="model.User"%>
+<%@ page import="model.Post"%>
+<%@ page import="java.util.List"%>
+<%@ page import="java.util.ArrayList"%>
+<%@ page import="java.util.HashMap"%>
+<%@ page import="java.util.Map"%>
+<%@ page import="java.time.format.DateTimeFormatter"%>
+
+<%
+User loginUser = (User) session.getAttribute("loginUser");
+List<Post> posts = (List<Post>) request.getAttribute("posts");
+
+if (loginUser == null) {
+	response.sendRedirect("login.jsp");
+	return;
+}
+
+DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+// 投稿を親投稿と返信投稿に分ける準備
+List<Post> parentPosts = new ArrayList<>();
+Map<Integer, List<Post>> repliesMap = new HashMap<>();
+
+if (posts != null) {
+	for (Post post : posts) {
+		Integer parentId = post.getParentPostId();
+		if (parentId == null) {
+	parentPosts.add(post);
+		} else {
+	repliesMap.computeIfAbsent(parentId, k -> new ArrayList<>()).add(post);
+		}
+	}
+}
+%>
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>タイムライン</title>
+<style>
+body {
+	font-family: 'Helvetica', sans-serif;
+	background-color: #f0f2f5;
+	margin: 0;
+	padding: 0;
+}
+
+.container {
+	max-width: 600px;
+	margin: 30px auto;
+	background: #fff;
+	border-radius: 10px;
+	padding: 20px;
+	box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.welcome {
+	font-size: 20px;
+	margin-bottom: 20px;
+}
+
+.welcome a {
+	text-decoration: none;
+	color: #333;
+}
+
+.post-form {
+	margin-bottom: 20px;
+}
+
+.post-textarea {
+	width: 100%;
+	padding: 10px;
+	border-radius: 8px;
+	border: 1px solid #ccc;
+	font-size: 14px;
+	resize: vertical;
+	box-sizing: border-box;
+	word-wrap: break-word; /* 改良 */
+}
+
+.post-button {
+	background-color: #1da1f2;
+	color: #fff;
+	border: none;
+	padding: 8px 14px;
+	border-radius: 20px;
+	cursor: pointer;
+	font-size: 14px;
+	/* float解除してflexで右寄せに変更 */
+}
+
+.post-button:hover {
+	background-color: #0d8ddb;
+}
+
+.logout-link {
+	display: inline-block;
+	margin-top: 10px;
+	color: #888;
+	text-decoration: none;
+	font-size: 14px;
+}
+
+.logout-link:hover {
+	text-decoration: underline;
+}
+
+.post-list {
+	margin-top: 30px;
+}
+
+.post-item {
+	background: #fefefe;
+	padding: 15px;
+	border-radius: 10px;
+	margin-bottom: 15px;
+	border: 1px solid #ddd;
+	max-width: 100%;
+	word-wrap: break-word; /* 長い文章の折り返し */
+	box-sizing: border-box;
+	position: relative;
+}
+
+.post-user {
+	font-weight: bold;
+	color: #333;
+	margin-bottom: 5px;
+}
+
+.post-content {
+	font-size: 15px;
+	margin: 10px 0;
+	white-space: pre-wrap;
+	word-wrap: break-word; /* ここも追加 */
+}
+
+.post-date {
+	font-size: 12px;
+	color: #999;
+	margin-bottom: 10px;
+}
+
+.action-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 10px;
+	flex-wrap: wrap; /* 横幅狭くなったときの折返し対応 */
+	gap: 8px;
+}
+
+.like-button {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	font-size: 16px;
+	color: #e0245e;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	border-radius: 20px;
+	transition: background-color 0.2s ease;
+}
+
+.like-button:hover {
+	background-color: #ffe6f0;
+}
+
+.like-text {
+	font-size: 18px;
+	line-height: 1;
+}
+
+.like-count {
+	font-size: 14px;
+	color: #555;
+}
+
+.reply-form {
+	flex-grow: 1;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.reply-textarea {
+	flex-grow: 1;
+	padding: 6px 10px;
+	border-radius: 8px;
+	border: 1px solid #ccc;
+	font-size: 14px;
+	resize: vertical;
+	height: 40px;
+	box-sizing: border-box;
+}
+
+.reply-submit {
+	background-color: #1da1f2;
+	color: #fff;
+	border: none;
+	padding: 6px 14px;
+	border-radius: 20px;
+	cursor: pointer;
+	font-size: 14px;
+	white-space: nowrap;
+}
+
+.reply-submit:hover {
+	background-color: #0d8ddb;
+}
+
+.delete-form {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+}
+
+.delete-button {
+	background-color: #e0e0e0;
+	color: #555;
+	border: none;
+	padding: 5px 12px;
+	border-radius: 15px;
+	cursor: pointer;
+	font-size: 12px;
+	border: none;
+	padding: 5px 12px;
+	border-radius: 15px;
+	cursor: pointer;
+	border-radius: 15px;
+	cursor: pointer;
+	font-size: 12px;
+	border: none;
+	cursor: pointer;
+	font-size: 12px;
+	border: none;
+	border: none;
+	padding: 5px 12px;
+	border-radius: 15px;
+	cursor: pointer;
+	border-radius: 15px;
+	cursor: pointer;
+	font-size: 12px;
+	border: none;
+	cursor: pointer;
+	padding: 5px 12px;
+	border-radius: 15px;
+	cursor: pointer;
+	border-radius: 15px;
+	cursor: pointer;
+	font-size: 12px;
+	border: none;
+	cursor: pointer;
+}
+
+.delete-button:hover {
+	background-color: #ccc;
+}
+
+/* 返信投稿の見た目 */
+.reply-item {
+	margin-left: 30px;
+	background-color: #f9f9f9;
+}
+</style>
+
+</head>
+<body>
+	<div class="container">
+
+		<h1 class="welcome">
+			<a href="profile?user_id=<%=loginUser.getId()%>"> <%=loginUser.getName()%>のタイムライン
+			</a>
+		</h1>
+
+		<form action="post" method="post" class="post-form">
+			<textarea name="content" rows="3" maxlength="280" required
+				placeholder="今どうしてる？" class="post-textarea"></textarea>
+			<button type="submit" class="post-button">投稿</button>
+		</form>
+
+		<a href="logout" class="logout-link">ログアウト</a>
+
+		<div class="post-list">
+			<%
+			// 親投稿を表示
+			for (Post parentPost : parentPosts) {
+			%>
+			<div class="post-item">
+				<p class="post-user"><%=parentPost.getUserName()%></p>
+				<p class="post-content"><%=parentPost.getContent()%></p>
+				<p class="post-date"><%=parentPost.getCreatedAt().format(formatter)%></p>
+
+				<div class="action-row">
+					<!-- いいねボタン -->
+					<button class="like-button" data-post-id="<%=parentPost.getId()%>">
+						<span class="like-text"><%=parentPost.isLikedByCurrentUser() ? "♥" : "♡"%></span>
+						<span class="like-count"><%=parentPost.getLikeCount()%></span>
+					</button>
+
+					<!-- formを使用したいいねボタン -->
+					<%-- <input type="hidden" name="post_id" value="<%=parentPost.getId()%>">
+					<button type="submit" class="like-button">
+						<span class="like-text"><%=parentPost.isLikedByCurrentUser() ? "♥" : "♡"%></span>
+						<span class="like-count"><%=parentPost.getLikeCount()%></span>
+					</button> --%>
+
+					<!-- フォロー機能  -->
+					<%
+					int postUserId = post.getUserId();
+					boolean isSelf = (postUserId == loginUser.getId());
+					Boolean isFollowing = (Boolean) request.getAttribute("isFollowing_" + postUserId);
+					Integer followerCount = (Integer) request.getAttribute("followerCount_" + postUserId);
+					%>
+
+					<%
+					if (!isSelf) {
+					%>
+					<button class="follow-button" data-user-id="<%=postUserId%>">
+						<%=(isFollowing != null && isFollowing) ? "フォロー解除" : "フォロー"%>
+					</button>
+					<span id="follower-count-<%=postUserId%>"> <%=(followerCount != null) ? followerCount : 0%>
+					</span>
+					<%
+					}
+					%>
+
+					<!-- 削除ボタン -->
+					<%
+					if (parentPost.getUserId() == loginUser.getId()) {
+					%>
+					<form action="delete" method="post" class="delete-form"
+						onsubmit="return confirm('この投稿を削除しますか？');">
+						<input type="hidden" name="post_id"
+							value="<%=parentPost.getId()%>">
+						<button type="submit" class="delete-button">削除</button>
+					</form>
+					<%
+					}
+					%>
+				</div>
+
+				<!-- 返信フォーム -->
+				<form action="post" method="post" class="reply-form"
+					style="margin-top: 10px;">
+					<input type="hidden" name="parent_post_id"
+						value="<%=parentPost.getId()%>">
+					<textarea name="content" maxlength="280" required
+						placeholder="返信する" class="reply-textarea"></textarea>
+					<button type="submit" class="reply-submit">返信</button>
+				</form>
+			</div>
+
+
+			<%
+			// 返信投稿を表示
+			List<Post> replies = repliesMap.get(parentPost.getId());
+			if (replies != null) {
+				for (Post reply : replies) {
+			%>
+			<div class="post-item reply-item">
+				<p class="post-user"><%=reply.getUserName()%></p>
+				<p class="post-content"><%=reply.getContent()%></p>
+				<p class="post-date"><%=reply.getCreatedAt().format(formatter)%></p>
+
+				<!-- いいねボタン -->
+				<button class="like-button" data-post-id="<%=reply.getId()%>">
+					<span class="like-text"><%=reply.isLikedByCurrentUser() ? "♥" : "♡"%></span>
+					<span class="like-count"><%=reply.getLikeCount()%></span>
+				</button>
+
+				<%
+				if (reply.getUserId() == loginUser.getId()) {
+				%>
+				<form action="delete" method="post" class="delete-form"
+					onsubmit="return confirm('この投稿を削除しますか？');">
+					<input type="hidden" name="post_id" value="<%=reply.getId()%>">
+					<button type="submit" class="delete-button">削除</button>
+				</form>
+				<%
+				}
+				%>
+			</div>
+			<%
+			}
+			}
+			}
+			%>
+		</div>
+
+	</div>
+
+	<!--  <script>
+document.querySelectorAll('.like-button').forEach(button => {
+	button.addEventListener('click', function () {
+		const postId = this.dataset.postId;
+
+		// POSTリクエストを送信
+		fetch('like', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded'
+			},
+			body: 'post_id=' + encodeURIComponent(postId)
+		})
+		.then(response => {
+			if (!response.ok) {
+				// ステータスエラー（例: 401 Unauthorized）
+				console.error('HTTP error:', response.status);
+				return;
+			}
+			return response.json();
+		})
+		.then(data => {
+			if (!data) return; // 無効なレスポンスの場合
+
+			// 自動でページをリロード
+			location.reload();
+		})
+		.catch(error => {
+			console.error("通信エラー:", error);
+		});
+	});
+});
+</script> -->
+
+	<script>
+document.querySelectorAll('.like-button').forEach(button => {
+	button.addEventListener('click', function () {
+		const postId = this.dataset.postId;
+
+		// POSTリクエストを送信
+		fetch('like', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded'
+			},
+			body: 'post_id=' + encodeURIComponent(postId)
+		})
+		.finally(() => {
+			// 通信成功・失敗にかかわらず常にページリロード
+			location.reload();
+		});
+	});
+});
+	</script>
+
+	<script>
+document.querySelectorAll('.follow-button').forEach(button => {
+	button.addEventListener('click', function () {
+		const followeeId = this.dataset.userId;
+
+		// POSTリクエストを送信
+		fetch('follow', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded'
+			},
+			body: 'followee_id=' + encodeURIComponent(followeeId)
+		})
+		.then(response => {
+			if (!response.ok) {
+				console.error('HTTPエラー:', response.status);
+				return;
+			}
+			return response.json();
+		})
+		.then(data => {
+			if (!data) return;
+
+			// フォローボタンの表示を更新
+			this.textContent = data.isFollowing ? 'フォロー解除' : 'フォロー';
+			this.classList.toggle('following', data.isFollowing);
+
+			// フォロワー数の更新（必要なら）
+			const followerCountElem = document.querySelector(`#follower-count-${followeeId}`);
+			if (followerCountElem) {
+				followerCountElem.textContent = data.followerCount;
+			}
+		})
+		.catch(error => {
+			console.error('通信エラー:', error);
+		});
+	});
+});
+</script>
+
+
+
+
+</body>
+</html>
