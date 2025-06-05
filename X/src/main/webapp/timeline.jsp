@@ -125,12 +125,6 @@ body {
 	position: relative;
 }
 
-.post-user {
-	font-weight: bold;
-	color: #333;
-	margin-bottom: 5px;
-}
-
 .post-content {
 	font-size: 15px;
 	margin: 10px 0;
@@ -238,8 +232,10 @@ body {
 
 /* 返信投稿の見た目 */
 .reply-item {
-	margin-left: 30px;
+	margin-left: 30px; /* インデント */
 	background-color: #f9f9f9;
+	border-left: 4px solid #ccc; /* 視覚的に区別しやすく */
+	padding-left: 10px; /* 境界と中身の距離を確保 */
 }
 
 .post-user {
@@ -251,6 +247,13 @@ body {
 	margin-bottom: 5px;
 }
 
+.reply-user {
+	display: flex;
+	align-items: center;
+	font-weight: bold;
+	color: #333;
+	margin-bottom: 5px;
+}
 /* フォローしていない状態（目立つ） */
 .follow-button {
 	background-color: #1da1f2; /* 青 */
@@ -278,6 +281,29 @@ body {
 .follow-button.following:hover {
 	background-color: #bbb;
 }
+
+.reply-to {
+	color: #555;
+	font-weight: normal;
+	font-size: 13px;
+	margin-right: 5px;
+}
+
+.reply-from {
+	color: #555;
+}
+
+a.user-link {
+	color: #333; /* 通常時の色 */
+	text-decoration: none; /* 下線をなくす */
+	font-weight: bold; /* ユーザー名らしく太字に */
+	transition: color 0.2s ease;
+}
+
+a.user-link:hover {
+	color: #1da1f2; /* ホバー時にアクセントカラー */
+	text-decoration: underline; /* ホバー時だけ下線を表示するなども可 */
+}
 </style>
 
 </head>
@@ -304,7 +330,8 @@ body {
 			%>
 			<div class="post-item">
 				<p class="post-user">
-					<span><%=parentPost.getUserName()%></span>
+					<a class="user-link"
+						href="profile?user_id=<%=parentPost.getUserId()%>"><%=parentPost.getUserName()%></a>
 
 					<%
 					int postUserId = parentPost.getUserId();
@@ -395,7 +422,21 @@ body {
 				for (Post reply : replies) {
 			%>
 			<div class="post-item reply-item">
-				<p class="post-user"><%=reply.getUserName()%></p>
+				<!-- 返信元を表示 -->
+				<p class="post-user">
+				<div class="reply-user">
+					<span class="reply-to"> <a class="user-link"
+						href="profile?user_id=<%=parentPost.getUserId()%>">@<%=parentPost.getUserName()%></a>
+						への返信 -
+					</span> <span class="reply-from"> <a class="user-link"
+						href="profile?user_id=<%=reply.getUserId()%>"><%=reply.getUserName()%></a>
+					</span>
+
+				</div>
+
+				</p>
+
+
 				<p class="post-content"><%=reply.getContent()%></p>
 				<p class="post-date"><%=reply.getCreatedAt().format(formatter)%></p>
 
